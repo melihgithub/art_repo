@@ -89,19 +89,34 @@
     private LoginModel loginModel = new();
     private bool isLoading = false;
     private string errorMessage = "";
+    private bool hasRendered = false;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Eğer kullanıcı zaten giriş yapmışsa dashboard'a yönlendir
-        var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
-        if (!string.IsNullOrEmpty(token))
+        if (firstRender)
         {
-            Navigation.NavigateTo("/");
+            hasRendered = true;
+            
+            // Eğer kullanıcı zaten giriş yapmışsa dashboard'a yönlendir
+            try
+            {
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+                if (!string.IsNullOrEmpty(token))
+                {
+                    Navigation.NavigateTo("/", true);
+                }
+            }
+            catch (Exception)
+            {
+                // JavaScript interop hatası durumunda sessizce devam et
+            }
         }
     }
 
     private async Task HandleLogin()
     {
+        if (!hasRendered) return;
+        
         isLoading = true;
         errorMessage = "";
         StateHasChanged();
