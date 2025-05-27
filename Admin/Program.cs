@@ -1,34 +1,49 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Components.Authorization;
-using ArtistPortfolio.Data;
-using ArtistPortfolio.Admin.Extensions;
 using ArtistPortfolio.Admin.Services;
+using ArtistPortfolio.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
+builder.Services.AddServerSideBlazor(options =>
+{
+    // Prerendering'i devre dışı bırak
+    options.DetailedErrors = builder.Environment.IsDevelopment();
+});
 
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// JWT Authentication
-builder.Services.AddJwtAuthentication(builder.Configuration);
-
-// Custom Authentication State Provider
-builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
-builder.Services.AddScoped<CustomAuthenticationStateProvider>();
-
-// Application Services
-builder.Services.AddApplicationServices();
-
-// Content Management Services
+// Services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAboutService, AboutService>();
 
-// Add HttpContextAccessor for accessing HTTP context in services
-builder.Services.AddHttpContextAccessor();
+// JWT Authentication
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["SecretKey"];
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -44,43 +59,11 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
-
-// Ensure database is created
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    try
-    {
-        context.Database.EnsureCreated();
-
-        // Seed default admin user if not exists
-        if (!context.Users.Any())
-        {
-            var defaultUser = new ArtistPortfolio.Shared.Models.User
-            {
-                Username = "admin",
-                Email = "admin@artistportfolio.com",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!"),
-                CreatedAt = DateTime.UtcNow,
-                IsActive = true
-            };
-
-            context.Users.Add(defaultUser);
-            context.SaveChanges();
-        }
-    }
-    catch (Exception ex)
-    {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while ensuring the database was created.");
-    }
-}
 
 app.Run();
