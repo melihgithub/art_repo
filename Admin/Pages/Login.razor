@@ -1,78 +1,148 @@
 @page "/login"
-@layout LoginLayout 
-@inject NavigationManager NavigationManager
-@inject AuthenticationStateProvider AuthenticationStateProvider
-@using System.ComponentModel.DataAnnotations
+@layout LoginLayout
 @using ArtistPortfolio.Admin.Services
-@using ArtistPortfolio.Admin.Shared
-@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    Giriş
-                </div>
-                <div class="card-body">
-                    @if (!string.IsNullOrEmpty(errorMessage))
-                    {
-                        <div class="alert alert-danger" role="alert">
-                            @errorMessage
-                        </div>
-                    }
-                    <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin">
-                        <DataAnnotationsValidator />
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Kullanıcı Adı</label>
-                            <InputText id="username" class="form-control" @bind-Value="loginModel.Username" placeholder="Kullanıcı adınızı girin" />
-                            <ValidationMessage For="@(() => loginModel.Username)" class="text-danger" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Şifre</label>
-                            <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password" placeholder="Şifrenizi girin" />
-                            <ValidationMessage For="@(() => loginModel.Password)" class="text-danger" />
-                        </div>
-                        <div class="mb-3 form-check">
-                            <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="loginModel.RememberMe" />
-                            <label class="form-check-label" for="rememberMe">Beni Hatırla</label>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Giriş Yap</button>
-                    </EditForm>
-                </div>
-            </div>
+<PageTitle>Giriş - Admin Panel</PageTitle>
+
+<div class="login-card">
+    <div class="login-header">
+        <h2>
+            <i class="fas fa-user-shield me-2"></i>
+            Admin Panel
+        </h2>
+        <p class="text-muted">Lütfen giriş bilgilerinizi giriniz</p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            @errorMessage
         </div>
+    }
+
+    <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+        <DataAnnotationsValidator />
+        
+        <div class="form-floating mb-3">
+            <InputText id="email" 
+                      class="form-control" 
+                      @bind-Value="loginModel.Email" 
+                      placeholder="E-posta adresiniz" />
+            <label for="email">
+                <i class="fas fa-envelope me-2"></i>E-posta
+            </label>
+            <ValidationMessage For="@(() => loginModel.Email)" class="text-danger small mt-1" />
+        </div>
+
+        <div class="form-floating mb-3">
+            <InputText id="password" 
+                      type="password" 
+                      class="form-control" 
+                      @bind-Value="loginModel.Password" 
+                      placeholder="Şifreniz" />
+            <label for="password">
+                <i class="fas fa-lock me-2"></i>Şifre
+            </label>
+            <ValidationMessage For="@(() => loginModel.Password)" class="text-danger small mt-1" />
+        </div>
+
+        <div class="form-check mb-3">
+            <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="loginModel.RememberMe" />
+            <label class="form-check-label" for="rememberMe">
+                Beni hatırla
+            </label>
+        </div>
+
+        <div class="d-grid">
+            <button type="submit" class="btn btn-primary btn-login" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="loading-spinner me-2"></span>
+                    <span>Giriş yapılıyor...</span>
+                }
+                else
+                {
+                    <i class="fas fa-sign-in-alt me-2"></i>
+                    <span>Giriş Yap</span>
+                }
+            </button>
+        </div>
+    </EditForm>
+
+    <div class="back-to-website">
+        <a href="/" target="_blank">
+            <i class="fas fa-globe me-1"></i>
+            Website'ye Dön
+        </a>
     </div>
 </div>
 
 @code {
-    private LoginModel loginModel = new LoginModel();
-    private string errorMessage;
+    private LoginModel loginModel = new();
+    private bool isLoading = false;
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Eğer kullanıcı zaten giriş yapmışsa dashboard'a yönlendir
+        var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+        if (!string.IsNullOrEmpty(token))
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
 
     private async Task HandleLogin()
     {
-        var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthenticationStateProvider;
-        var result = await customAuthStateProvider.ValidateUser(loginModel.Username, loginModel.Password);
+        isLoading = true;
+        errorMessage = "";
+        StateHasChanged();
 
-        if (result)
+        try
         {
-            NavigationManager.NavigateTo("/admin", forceLoad: true);
+            var result = await AuthService.LoginAsync(loginModel.Email, loginModel.Password);
+            
+            if (result.Success)
+            {
+                // Token'ı localStorage'a kaydet
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", result.Token);
+                
+                // Dashboard'a yönlendir
+                Navigation.NavigateTo("/", true);
+            }
+            else
+            {
+                errorMessage = result.Message ?? "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.";
+            }
         }
-        else
+        catch (Exception ex)
         {
-            errorMessage = "Kullanıcı adı veya şifre hatalı.";
+            errorMessage = "Bir hata oluştu. Lütfen tekrar deneyin.";
+            Console.WriteLine($"Login error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
         }
     }
 
     public class LoginModel
     {
-        [Required(ErrorMessage = "Kullanıcı adı gereklidir.")]
-        public string Username { get; set; }
+        [Required(ErrorMessage = "E-posta adresi gereklidir.")]
+        [EmailAddress(ErrorMessage = "Geçerli bir e-posta adresi giriniz.")]
+        public string Email { get; set; } = "";
 
         [Required(ErrorMessage = "Şifre gereklidir.")]
-        public string Password { get; set; }
+        [MinLength(6, ErrorMessage = "Şifre en az 6 karakter olmalıdır.")]
+        public string Password { get; set; } = "";
 
-        public bool RememberMe { get; set; }
+        public bool RememberMe { get; set; } = false;
     }
 }
