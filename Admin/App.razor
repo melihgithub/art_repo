@@ -1,67 +1,41 @@
-@using ArtistPortfolio.Admin.Shared
-@using Microsoft.AspNetCore.Routing
-<!DOCTYPE html>
-<html lang="tr">
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Sayfa Bulunamadı</PageTitle>
+        <LayoutView Layout="@typeof(EmptyLayout)">
+            <div class="error-container">
+                <div class="error-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="error-title">404 - Sayfa Bulunamadı</div>
+                <div class="error-message">
+                    Aradığınız sayfa bulunamadı. URL'yi kontrol edin veya ana sayfaya dönün.
+                </div>
+                <div class="error-actions">
+                    <a href="/" class="btn-home">
+                        <i class="fas fa-home"></i>
+                        Ana Sayfa
+                    </a>
+                    <button onclick="history.back()" class="btn-back">
+                        <i class="fas fa-arrow-left"></i>
+                        Geri Dön
+                    </button>
+                </div>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>
 
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Panel - Sanatçı Portföyü</title>
-    <base href="~/" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="css/admin.css" rel="stylesheet" />
-    <link href="ArtistPortfolio.Admin.styles.css" rel="stylesheet" />
-</head>
-
-<body>
-    <div id="app">
-        <Router AppAssembly="@typeof(App).Assembly">
-            <Found Context="routeData">
-                <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-                <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-            </Found>
-            <NotFound>
-                <PageTitle>Sayfa Bulunamadı</PageTitle>
-                <LayoutView Layout="@typeof(EmptyLayout)">
-                    <div class="error-container">
-                        <div class="error-icon">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div class="error-title">404 - Sayfa Bulunamadı</div>
-                        <div class="error-message">
-                            Aradığınız sayfa bulunamadı. URL'yi kontrol edin veya ana sayfaya dönün.
-                        </div>
-                        <div class="error-actions">
-                            <a href="/" class="btn-home">
-                                <i class="fas fa-home"></i>
-                                Ana Sayfa
-                            </a>
-                            <button onclick="history.back()" class="btn-back">
-                                <i class="fas fa-arrow-left"></i>
-                                Geri Dön
-                            </button>
-                        </div>
-                    </div>
-                </LayoutView>
-            </NotFound>
-        </Router>
-    </div>
-
-    <div id="blazor-error-ui">
-        <environment include="Staging,Production">
-            Bir hata oluştu. Bu uygulama artık yanıt vermiyor olabilir.
-        </environment>
-        <environment include="Development">
-            İşlenmemiş bir özel durum oluştu. Ayrıntılar için tarayıcı geliştirici araçlarına bakın.
-        </environment>
-        <a href="" class="reload">Yeniden yükle</a>
-        <a class="dismiss">🗙</a>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/admin.js"></script>
-    <script src="_framework/blazor.server.js"></script>
-</body>
-
-</html>
+<div id="blazor-error-ui">
+    <environment include="Staging,Production">
+        Bir hata oluştu. Bu uygulama artık yanıt vermiyor olabilir.
+    </environment>
+    <environment include="Development">
+        İşlenmemiş bir özel durum oluştu. Ayrıntılar için tarayıcı geliştirici araçlarına bakın.
+    </environment>
+    <a href="" class="reload">Yeniden yükle</a>
+    <a class="dismiss">🗙</a>
+</div>
