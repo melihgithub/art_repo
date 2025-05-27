@@ -1,20 +1,299 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutView
 
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Panel - Giriş</title>
+    <title>Admin Panel</title>
     <base href="~/" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="css/admin.css" rel="stylesheet" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .empty-layout-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .content-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .error-container {
+            text-align: center;
+            max-width: 500px;
+            padding: 40px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .error-icon {
+            font-size: 4rem;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+        
+        .error-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .error-message {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .error-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn-home {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-home:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .btn-back {
+            background: #6c757d;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-back:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .loading-container {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .maintenance-container {
+            text-align: center;
+            max-width: 600px;
+            padding: 40px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .maintenance-icon {
+            font-size: 4rem;
+            color: #ffc107;
+            margin-bottom: 20px;
+        }
+        
+        .footer-info {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .error-container,
+            .maintenance-container {
+                margin: 20px;
+                padding: 30px 20px;
+            }
+            
+            .error-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn-home,
+            .btn-back {
+                width: 100%;
+                max-width: 200px;
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
+
 <body>
-    @Body
+    <div class="empty-layout-container">
+        <div class="content-wrapper">
+            @Body
+        </div>
+        
+        <div class="footer-info">
+            <small>&copy; 2024 Sanatçı Portföyü Admin Panel</small>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/admin.js"></script>
+    <script src="_framework/blazor.server.js"></script>
+
+    <div id="blazor-error-ui">
+        <environment include="Staging,Production">
+            Bir hata oluştu. Bu uygulama artık yanıt vermiyor olabilir. 
+        </environment>
+        <environment include="Development">
+            İşlenmemiş bir özel durum oluştu. Ayrıntılar için tarayıcı geliştirici araçlarına bakın.
+        </environment>
+        <a href="" class="reload">Yeniden yükle</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <script>
+        // Initialize admin functions when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.initializeAdmin === 'function') {
+                window.initializeAdmin();
+            }
+        });
+
+        // Handle back button
+        window.goBack = function() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '/';
+            }
+        };
+
+        // Handle home button
+        window.goHome = function() {
+            window.location.href = '/';
+        };
+
+        // Show loading
+        window.showLoading = function(message = 'Yükleniyor...') {
+            const container = document.querySelector('.content-wrapper');
+            if (container) {
+                container.innerHTML = `
+                    <div class="loading-container">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">${message}</div>
+                    </div>
+                `;
+            }
+        };
+
+        // Show error
+        window.showError = function(title = 'Bir Hata Oluştu', message = 'Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.', showActions = true) {
+            const container = document.querySelector('.content-wrapper');
+            if (container) {
+                const actionsHtml = showActions ? `
+                    <div class="error-actions">
+                        <a href="/" class="btn-home">
+                            <i class="fas fa-home"></i>
+                            Ana Sayfa
+                        </a>
+                        <button onclick="goBack()" class="btn-back">
+                            <i class="fas fa-arrow-left"></i>
+                            Geri Dön
+                        </button>
+                    </div>
+                ` : '';
+
+                container.innerHTML = `
+                    <div class="error-container">
+                        <div class="error-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="error-title">${title}</div>
+                        <div class="error-message">${message}</div>
+                        ${actionsHtml}
+                    </div>
+                `;
+            }
+        };
+
+        // Show maintenance
+        window.showMaintenance = function(message = 'Sistem bakımda. Lütfen daha sonra tekrar deneyin.') {
+            const container = document.querySelector('.content-wrapper');
+            if (container) {
+                container.innerHTML = `
+                    <div class="maintenance-container">
+                        <div class="maintenance-icon">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="error-title">Sistem Bakımda</div>
+                        <div class="error-message">${message}</div>
+                        <div class="error-actions">
+                            <button onclick="location.reload()" class="btn-home">
+                                <i class="fas fa-refresh"></i>
+                                Yenile
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+    </script>
 </body>
 </html>
