@@ -1,8 +1,10 @@
 @page "/login"
 @layout LoginLayout
 @using ArtistPortfolio.Admin.Services
+@using ArtistPortfolio.Admin.Shared
 @using Microsoft.AspNetCore.Components.Forms
 @using System.ComponentModel.DataAnnotations
+@using Microsoft.JSInterop
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
