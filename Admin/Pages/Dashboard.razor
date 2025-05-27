@@ -1,0 +1,216 @@
+@page "/dashboard"
+@using ArtistPortfolio.Data
+@using ArtistPortfolio.Shared.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+
+<PageTitle>Dashboard - Admin Panel</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </h1>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Toplam Eser
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@totalArtworks</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-images fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Aktif Sergiler
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@activeExhibitions</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Okunmamış Mesaj
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@unreadMessages</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-envelope fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Toplam Haber
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@totalNews</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-newspaper fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-clock me-2"></i>Son Mesajlar
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (recentMessages != null && recentMessages.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Gönderen</th>
+                                        <th>Konu</th>
+                                        <th>Tarih</th>
+                                        <th>Durum</th>
+                                        <th>İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var message in recentMessages)
+                                    {
+                                        <tr class="@(message.IsRead ? "" : "table-warning")">
+                                            <td>@message.Name</td>
+                                            <td>@message.Subject</td>
+                                            <td>@message.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                            <td>
+                                                @if (message.IsRead)
+                                                {
+                                                    <span class="badge bg-success">Okundu</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning">Okunmadı</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <a href="/admin/messages/@message.Id" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-3">Henüz mesaj bulunmuyor.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>Yaklaşan Sergiler
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (upcomingExhibitions != null && upcomingExhibitions.Any())
+                    {
+                        @foreach (var exhibition in upcomingExhibitions)
+                        {
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-calendar-check text-primary"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="fw-bold">@exhibition.Title</div>
+                                    <small class="text-muted">@exhibition.StartDate.ToString("dd MMMM yyyy")</small>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-3">Yaklaşan sergi bulunmuyor.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int totalArtworks = 0;
+    private int activeExhibitions = 0;
+    private int unreadMessages = 0;
+    private int totalNews = 0;
+    private List<ContactMessage>? recentMessages;
+    private List<Exhibition>? upcomingExhibitions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        totalArtworks = await DbContext.Artworks.CountAsync(a => a.IsActive);
+        activeExhibitions = await DbContext.Exhibitions.CountAsync(e => e.IsActive && e.Status == ExhibitionStatus.Active);
+        unreadMessages = await DbContext.ContactMessages.CountAsync(m => !m.IsRead);
+        totalNews = await DbContext.NewsItems.CountAsync(n => n.IsActive);
+
+        recentMessages = await DbContext.ContactMessages
+            .OrderByDescending(m => m.CreatedAt)
+            .Take(5)
+            .ToListAsync();
+
+        upcomingExhibitions = await DbContext.Exhibitions
+            .Where(e => e.IsActive && e.Status == ExhibitionStatus.Upcoming)
+            .OrderBy(e => e.StartDate)
+            .Take(5)
+            .ToListAsync();
+    }
+}

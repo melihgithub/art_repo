@@ -1,0 +1,147 @@
+@page "/"
+@using ArtistPortfolio.Data
+@using ArtistPortfolio.Shared.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+
+<PageTitle>Ana Sayfa - Sanatçı Portföyü</PageTitle>
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-overlay">
+        <div class="container">
+            <div class="row align-items-center min-vh-100">
+                <div class="col-lg-6">
+                    <h1 class="display-4 text-white fw-bold mb-4">
+                        Sanatın Büyülü Dünyasına Hoş Geldiniz
+                    </h1>
+                    <p class="lead text-white mb-4">
+                        Renklerin dansı, fırçaların şiiri... Her eserde bir hikaye, her tabloda bir ruh.
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="/eserler" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-images me-2"></i>Eserlerimi Keşfet
+                        </a>
+                        <a href="/hakkimda" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-user me-2"></i>Hakkımda
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="hero-artwork">
+                        <img src="/images/hero-artwork.jpg" alt="Featured Artwork" class="img-fluid rounded shadow-lg">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Artworks -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 fw-bold">Öne Çıkan Eserler</h2>
+                <p class="lead text-muted">En değerli ve etkileyici çalışmalarımdan seçkiler</p>
+            </div>
+        </div>
+        <div class="row">
+            @if (featuredArtworks != null)
+            {
+                @foreach (var artwork in featuredArtworks)
+                {
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card artwork-card h-100">
+                            <img src="@artwork.ImageUrl" class="card-img-top" alt="@artwork.Title">
+                            <div class="card-body">
+                                <h5 class="card-title">@artwork.Title</h5>
+                                <p class="card-text text-muted">@artwork.Description</p>
+                                @if (!string.IsNullOrEmpty(artwork.Technique))
+                                {
+                                    <small class="text-muted">
+                                        <i class="fas fa-brush me-1"></i>@artwork.Technique
+                                    </small>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+        <div class="text-center mt-4">
+            <a href="/eserler" class="btn btn-primary btn-lg">
+                <i class="fas fa-images me-2"></i>Tüm Eserler
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Upcoming Exhibitions -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 fw-bold">Yaklaşan Sergiler</h2>
+                <p class="lead text-muted">Gelecek etkinlikler ve sergiler</p>
+            </div>
+        </div>
+        <div class="row">
+            @if (upcomingExhibitions != null)
+            {
+                @foreach (var exhibition in upcomingExhibitions)
+                {
+                    <div class="col-lg-6 mb-4">
+                        <div class="card exhibition-card">
+                            <div class="row g-0">
+                                <div class="col-md-4">
+                                    <img src="@exhibition.ImageUrl" class="img-fluid rounded-start h-100 object-cover" alt="@exhibition.Title">
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="card-body">
+                                        <h5 class="card-title">@exhibition.Title</h5>
+                                        <p class="card-text">@exhibition.Description</p>
+                                        <p class="card-text">
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i>@exhibition.StartDate.ToString("dd MMMM yyyy")
+                                                @if (!string.IsNullOrEmpty(exhibition.Location))
+                                                {
+                                                    <br><i class="fas fa-map-marker-alt me-1"></i>@exhibition.Location
+                                                }
+                                            </small>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+        <div class="text-center mt-4">
+            <a href="/sergiler" class="btn btn-primary btn-lg">
+                <i class="fas fa-calendar me-2"></i>Tüm Sergiler
+            </a>
+        </div>
+    </div>
+</section>
+
+@code {
+    private List<Artwork>? featuredArtworks;
+    private List<Exhibition>? upcomingExhibitions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        featuredArtworks = await DbContext.Artworks
+            .Where(a => a.IsActive)
+            .OrderBy(a => a.DisplayOrder)
+            .Take(3)
+            .ToListAsync();
+
+        upcomingExhibitions = await DbContext.Exhibitions
+            .Where(e => e.IsActive && e.Status == ExhibitionStatus.Upcoming)
+            .OrderBy(e => e.StartDate)
+            .Take(2)
+            .ToListAsync();
+    }
+}

@@ -1,0 +1,134 @@
+@page "/sss"
+@using ArtistPortfolio.Data
+@using ArtistPortfolio.Shared.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+
+<PageTitle>Sıkça Sorulan Sorular - Sanatçı Portföyü</PageTitle>
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 text-center mb-5">
+            <h1 class="display-4 fw-bold">Sıkça Sorulan Sorular</h1>
+            <p class="lead text-muted">Merak ettiğiniz soruların cevapları</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            @if (faqs != null && faqs.Any())
+            {
+                <div class="accordion" id="faqAccordion">
+                    @for (int i = 0; i < faqs.Count; i++)
+                    {
+                        var faq = faqs[i];
+                        var collapseId = $"collapse{i}";
+                        var headingId = $"heading{i}";
+                        
+                        <div class="accordion-item mb-3">
+                            <h2 class="accordion-header" id="@headingId">
+                                <button class="accordion-button @(i != 0 ? "collapsed" : "")" 
+                                        type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#@collapseId" 
+                                        aria-expanded="@(i == 0 ? "true" : "false")" 
+                                        aria-controls="@collapseId">
+                                    <i class="fas fa-question-circle me-2"></i>
+                                    @faq.Question
+                                </button>
+                            </h2>
+                            <div id="@collapseId" 
+                                 class="accordion-collapse collapse @(i == 0 ? "show" : "")" 
+                                 aria-labelledby="@headingId" 
+                                 data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    <i class="fas fa-reply me-2 text-primary"></i>
+                                    @((MarkupString)faq.Answer.Replace("\n", "<br>"))
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Henüz sıkça sorulan soru bulunmuyor.
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Contact CTA -->
+    <div class="row mt-5">
+        <div class="col-12 text-center">
+            <div class="card bg-light">
+                <div class="card-body py-5">
+                    <h3 class="card-title">
+                        <i class="fas fa-question me-2"></i>Sorunuzun cevabını bulamadınız mı?
+                    </h3>
+                    <p class="card-text text-muted mb-4">
+                        Merak ettiğiniz her şeyi sorabilirsiniz. Size yardımcı olmaktan mutluluk duyarız.
+                    </p>
+                    <a href="/iletisim" class="btn btn-primary btn-lg">
+                        <i class="fas fa-envelope me-2"></i>İletişime Geçin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<ArtistPortfolio.Shared.Models.FAQ>? faqs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        faqs = await DbContext.FAQs
+            .Where(f => f.IsActive)
+            .OrderBy(f => f.DisplayOrder)
+            .ThenBy(f => f.Id)
+            .ToListAsync();
+    }
+}
+
+<style>
+    .accordion-item {
+        border: 1px solid #dee2e6;
+        border-radius: 10px !important;
+        overflow: hidden;
+    }
+
+    .accordion-button {
+        background-color: #f8f9fa;
+        border: none;
+        font-weight: 500;
+        padding: 1.25rem 1.5rem;
+    }
+
+    .accordion-button:not(.collapsed) {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .accordion-button:focus {
+        box-shadow: none;
+        border: none;
+    }
+
+    .accordion-body {
+        padding: 1.5rem;
+        background-color: white;
+    }
+
+    .accordion-button::after {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23212529'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+    }
+
+    .accordion-button:not(.collapsed)::after {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+    }
+</style>

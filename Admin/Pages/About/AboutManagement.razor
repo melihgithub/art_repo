@@ -1,0 +1,138 @@
+@page "/aboutmanagement"
+@using ArtistPortfolio.Shared.Models
+@using ArtistPortfolio.Admin.Services
+@inject AboutService AboutService
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
+
+<h3>About Management</h3>
+
+@if (abouts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <button class="btn btn-primary" @onclick="CreateAbout">Create New</button>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Is Active</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var about in abouts)
+            {
+                <tr>
+                    <td>@about.Title</td>
+                    <td>@about.IsActive</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" @onclick="() => EditAbout(about.Id)">Edit</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteAbout(about.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (showPopup)
+{
+    <div class="modal fade show" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">@popupTitle About</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="ClosePopup">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@currentAbout" OnValidSubmit="@SaveAbout">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="form-group">
+                            <label for="title">Title</label>
+                            <InputText id="title" class="form-control" @bind-Value="currentAbout.Title" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="content">Content</label>
+                            <InputTextArea id="content" class="form-control" rows="8" @bind-Value="currentAbout.Content" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="imageUrl">Image URL</label>
+                            <InputText id="imageUrl" class="form-control" @bind-Value="currentAbout.ImageUrl" />
+                        </div>
+
+                        <div class="form-group form-check">
+                            <InputCheckbox id="isActive" class="form-check-input" @bind-Value="currentAbout.IsActive" />
+                            <label class="form-check-label" for="isActive">Is Active</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick="ClosePopup">Cancel</button>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<About> abouts;
+    private About currentAbout = new About();
+    private bool showPopup = false;
+    private string popupTitle = "Create";
+
+    protected override async Task OnInitializedAsync()
+    {
+        abouts = await AboutService.GetAboutsAsync();
+    }
+
+    private void CreateAbout()
+    {
+        currentAbout = new About();
+        popupTitle = "Create";
+        showPopup = true;
+    }
+
+    private async Task EditAbout(int id)
+    {
+        currentAbout = await AboutService.GetAboutAsync(id);
+        popupTitle = "Edit";
+        showPopup = true;
+    }
+
+    private async Task SaveAbout()
+    {
+        if (currentAbout.Id == 0)
+        {
+            await AboutService.CreateAboutAsync(currentAbout);
+        }
+        else
+        {
+            await AboutService.UpdateAboutAsync(currentAbout);
+        }
+
+        abouts = await AboutService.GetAboutsAsync();
+        ClosePopup();
+    }
+
+    private async Task DeleteAbout(int id)
+    {
+        await AboutService.DeleteAboutAsync(id);
+        abouts = await AboutService.GetAboutsAsync();
+    }
+
+    private void ClosePopup()
+    {
+        showPopup = false;
+    }
+}

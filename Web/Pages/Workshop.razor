@@ -1,0 +1,183 @@
+@page "/atolye"
+@using ArtistPortfolio.Data
+@using ArtistPortfolio.Shared.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+
+<PageTitle>Atölye - Sanatçı Portföyü</PageTitle>
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 text-center mb-5">
+            <h1 class="display-4 fw-bold">Atölyem</h1>
+            <p class="lead text-muted">Atölye çalışmaları ve eğitim faaliyetleri</p>
+        </div>
+    </div>
+
+    <!-- Workshop Categories -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-pills justify-content-center">
+                <li class="nav-item">
+                    <button class="nav-link @(selectedType == null ? "active" : "")" 
+                            @onclick="() => FilterByType(null)">
+                        Tümü
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(selectedType == WorkshopType.About ? "active" : "")" 
+                            @onclick="() => FilterByType(WorkshopType.About)">
+                        <i class="fas fa-info-circle me-1"></i>Atölye Hakkında
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(selectedType == WorkshopType.Process ? "active" : "")" 
+                            @onclick="() => FilterByType(WorkshopType.Process)">
+                        <i class="fas fa-cogs me-1"></i>Çalışma Süreci
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(selectedType == WorkshopType.StudentWork ? "active" : "")" 
+                            @onclick="() => FilterByType(WorkshopType.StudentWork)">
+                        <i class="fas fa-graduation-cap me-1"></i>Öğrenci Çalışmaları
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Workshop Content -->
+    <div class="row">
+        @if (filteredWorkshops != null && filteredWorkshops.Any())
+        {
+            @foreach (var workshop in filteredWorkshops)
+            {
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card workshop-card h-100">
+                        @if (!string.IsNullOrEmpty(workshop.ImageUrl))
+                        {
+                            <img src="@workshop.ImageUrl" class="card-img-top" alt="@workshop.Title" style="height: 250px; object-fit: cover;">
+                        }
+                        <div class="card-body d-flex flex-column">
+                            <div class="mb-2">
+                                <span class="badge bg-@GetTypeColor(workshop.Type)">
+                                    <i class="@GetTypeIcon(workshop.Type) me-1"></i>@GetTypeText(workshop.Type)
+                                </span>
+                            </div>
+                            <h5 class="card-title">@workshop.Title</h5>
+                            @if (!string.IsNullOrEmpty(workshop.Description))
+                            {
+                                <p class="card-text flex-grow-1">@workshop.Description</p>
+                            }
+                            <div class="mt-auto">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>@workshop.CreatedAt.ToString("dd MMMM yyyy")
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    @(selectedType.HasValue ? $"{GetTypeText(selectedType.Value)} kategorisinde" : "") içerik bulunmuyor.
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Workshop Info Section -->
+    @if (selectedType == null || selectedType == WorkshopType.About)
+    {
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h3 class="card-title text-center mb-4">
+                            <i class="fas fa-palette me-2"></i>Atölye Dersleri
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-clock me-2"></i>Ders Saatleri</h5>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-calendar-day me-2"></i>Pazartesi - Cuma: 10:00 - 18:00</li>
+                                    <li><i class="fas fa-calendar-day me-2"></i>Cumartesi: 10:00 - 16:00</li>
+                                    <li><i class="fas fa-calendar-day me-2"></i>Pazar: Kapalı</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-users me-2"></i>Kurs Bilgileri</h5>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-user-graduate me-2"></i>Başlangıç seviyesi</li>
+                                    <li><i class="fas fa-user-graduate me-2"></i>Orta seviye</li>
+                                    <li><i class="fas fa-user-graduate me-2"></i>İleri seviye</li>
+                                    <li><i class="fas fa-user-graduate me-2"></i>Özel dersler</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="text-center mt-4">
+                            <a href="/iletisim" class="btn btn-primary btn-lg">
+                                <i class="fas fa-envelope me-2"></i>Bilgi Al
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<ArtistPortfolio.Shared.Models.Workshop>? allWorkshops;
+    private List<ArtistPortfolio.Shared.Models.Workshop>? filteredWorkshops;
+    private WorkshopType? selectedType;
+
+    protected override async Task OnInitializedAsync()
+    {
+        allWorkshops = await DbContext.Workshops
+            .Where(w => w.IsActive)
+            .OrderByDescending(w => w.CreatedAt)
+            .ToListAsync();
+
+        FilterByType(null);
+    }
+
+    private void FilterByType(WorkshopType? type)
+    {
+        selectedType = type;
+        
+        if (allWorkshops == null) return;
+
+        filteredWorkshops = type.HasValue 
+            ? allWorkshops.Where(w => w.Type == type.Value).ToList()
+            : allWorkshops.ToList();
+    }
+
+    private string GetTypeColor(WorkshopType type) => type switch
+    {
+        WorkshopType.About => "primary",
+        WorkshopType.Process => "success",
+        WorkshopType.StudentWork => "warning",
+        _ => "secondary"
+    };
+
+    private string GetTypeIcon(WorkshopType type) => type switch
+    {
+        WorkshopType.About => "fas fa-info-circle",
+        WorkshopType.Process => "fas fa-cogs",
+        WorkshopType.StudentWork => "fas fa-graduation-cap",
+        _ => "fas fa-file"
+    };
+
+    private string GetTypeText(WorkshopType type) => type switch
+    {
+        WorkshopType.About => "Atölye Hakkında",
+        WorkshopType.Process => "Çalışma Süreci",
+        WorkshopType.StudentWork => "Öğrenci Çalışmaları",
+        _ => "Diğer"
+    };
+}

@@ -1,0 +1,36 @@
+@using ArtistPortfolio.Admin.Services
+@using Microsoft.JSInterop
+@inherits LayoutComponentBase
+@inject IJSRuntime JSRuntime
+@inject CustomAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<div class="admin-layout">
+    <AdminSidebar />
+    <div class="main-content">
+        <AdminNavbar />
+        <main class="content-area">
+            @Body
+        </main>
+    </div>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Check if user is authenticated
+        var isAuthenticated = await AuthStateProvider.IsAuthenticatedAsync();
+        if (!isAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("initializeAdmin");
+        }
+    }
+}

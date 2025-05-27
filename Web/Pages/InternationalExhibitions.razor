@@ -1,0 +1,125 @@
+@page "/yurtdisi"
+@using ArtistPortfolio.Data
+@using ArtistPortfolio.Shared.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+
+<PageTitle>Yurtdışından - Sanatçı Portföyü</PageTitle>
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 text-center mb-5">
+            <h1 class="display-4 fw-bold">Yurtdışından</h1>
+            <p class="lead text-muted">Uluslararası sergiler ve katılımlar</p>
+        </div>
+    </div>
+
+    <!-- International Exhibitions -->
+    <div class="row">
+        @if (internationalExhibitions != null && internationalExhibitions.Any())
+        {
+            @foreach (var exhibition in internationalExhibitions)
+            {
+                <div class="col-lg-6 mb-4">
+                    <div class="card exhibition-card h-100">
+                        @if (!string.IsNullOrEmpty(exhibition.ImageUrl))
+                        {
+                            <img src="@exhibition.ImageUrl" class="card-img-top" alt="@exhibition.Title" style="height: 250px; object-fit: cover;">
+                        }
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title">@exhibition.Title</h5>
+                                <span class="badge bg-primary">
+                                    <i class="fas fa-globe me-1"></i>Uluslararası
+                                </span>
+                            </div>
+                            
+                            @if (!string.IsNullOrEmpty(exhibition.Description))
+                            {
+                                <p class="card-text flex-grow-1">@exhibition.Description</p>
+                            }
+                            
+                            <div class="mt-auto">
+                                <div class="exhibition-details">
+                                    <p class="card-text mb-1">
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            @exhibition.StartDate.ToString("dd MMMM yyyy")
+                                            @if (exhibition.EndDate.HasValue)
+                                            {
+                                                <span> - @exhibition.EndDate.Value.ToString("dd MMMM yyyy")</span>
+                                            }
+                                        </small>
+                                    </p>
+                                    
+                                    @if (!string.IsNullOrEmpty(exhibition.Location))
+                                    {
+                                        <p class="card-text mb-1">
+                                            <small class="text-muted">
+                                                <i class="fas fa-map-marker-alt me-1"></i>@exhibition.Location
+                                            </small>
+                                        </p>
+                                    }
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-tag me-1"></i>@GetExhibitionTypeText(exhibition.Type)
+                                        </small>
+                                        <span class="badge bg-@GetStatusColor(exhibition.Status)">
+                                            @GetStatusText(exhibition.Status)
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Henüz uluslararası sergi bulunmuyor.
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<Exhibition>? internationalExhibitions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        internationalExhibitions = await DbContext.Exhibitions
+            .Where(e => e.IsActive && e.IsInternational)
+            .OrderByDescending(e => e.StartDate)
+            .ToListAsync();
+    }
+
+    private string GetExhibitionTypeText(ExhibitionType type) => type switch
+    {
+        ExhibitionType.Solo => "Kişisel Sergi",
+        ExhibitionType.Group => "Karma Sergi",
+        ExhibitionType.Participation => "Katılım",
+        _ => "Diğer"
+    };
+
+    private string GetStatusColor(ExhibitionStatus status) => status switch
+    {
+        ExhibitionStatus.Upcoming => "warning",
+        ExhibitionStatus.Active => "success",
+        ExhibitionStatus.Past => "secondary",
+        _ => "primary"
+    };
+
+    private string GetStatusText(ExhibitionStatus status) => status switch
+    {
+        ExhibitionStatus.Upcoming => "Yaklaşan",
+        ExhibitionStatus.Active => "Aktif",
+        ExhibitionStatus.Past => "Geçmiş",
+        _ => "Bilinmeyen"
+    };
+}

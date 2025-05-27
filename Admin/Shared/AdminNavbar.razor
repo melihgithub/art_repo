@@ -1,0 +1,49 @@
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark admin-navbar">
+    <div class="container-fluid">
+        <button class="btn btn-outline-light me-3" type="button" @onclick="ToggleSidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <span class="navbar-brand mb-0 h1">Sanatçı Portföyü - Admin</span>
+        
+        <div class="navbar-nav ms-auto">
+            <div class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-user-circle me-1"></i>Admin
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="/profile">
+                        <i class="fas fa-user me-2"></i>Profil
+                    </a></li>
+                    <li><a class="dropdown-item" href="/settings">
+                        <i class="fas fa-cog me-2"></i>Ayarlar
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="/" target="_blank">
+                        <i class="fas fa-external-link-alt me-2"></i>Siteyi Görüntüle
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" @onclick="Logout">
+                        <i class="fas fa-sign-out-alt me-2"></i>Çıkış Yap
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+@code {
+    private async Task ToggleSidebar()
+    {
+        await JSRuntime.InvokeVoidAsync("toggleSidebar");
+    }
+
+    private async Task Logout()
+    {
+        // TODO: Implement logout logic
+        await JSRuntime.InvokeVoidAsync("logout");
+    }
+}

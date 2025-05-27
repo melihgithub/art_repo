@@ -1,0 +1,211 @@
+@page "/sergiler"
+@using ArtistPortfolio.Data
+@using ArtistPortfolio.Shared.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+
+<PageTitle>Sergiler - Sanatçı Portföyü</PageTitle>
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 text-center mb-5">
+            <h1 class="display-4 fw-bold">Sergilerim</h1>
+            <p class="lead text-muted">Geçmiş ve gelecek sergi etkinliklerim</p>
+        </div>
+    </div>
+
+    <!-- Status Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-pills justify-content-center">
+                <li class="nav-item">
+                    <button class="nav-link @(selectedStatus == null ? "active" : "")" 
+                            @onclick="() => FilterByStatus(null)">
+                        Tümü
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(selectedStatus == ExhibitionStatus.Upcoming ? "active" : "")" 
+                            @onclick="() => FilterByStatus(ExhibitionStatus.Upcoming)">
+                        <i class="fas fa-clock me-1"></i>Yaklaşan
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(selectedStatus == ExhibitionStatus.Active ? "active" : "")" 
+                            @onclick="() => FilterByStatus(ExhibitionStatus.Active)">
+                        <i class="fas fa-play me-1"></i>Aktif
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(selectedStatus == ExhibitionStatus.Past ? "active" : "")" 
+                            @onclick="() => FilterByStatus(ExhibitionStatus.Past)">
+                        <i class="fas fa-history me-1"></i>Geçmiş
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Exhibition Timeline -->
+    <div class="row">
+        <div class="col-12">
+            @if (filteredExhibitions != null && filteredExhibitions.Any())
+            {
+                <div class="timeline-container">
+                    @foreach (var exhibition in filteredExhibitions)
+                    {
+                        <div class="exhibition-timeline-item">
+                            <div class="timeline-date">
+                                <div class="date-circle bg-@GetStatusColor(exhibition.Status)">
+                                    <i class="@GetStatusIcon(exhibition.Status)"></i>
+                                </div>
+                                <div class="date-text">
+                                    @exhibition.StartDate.ToString("MMM yyyy")
+                                </div>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="card exhibition-card">
+                                    <div class="row g-0">
+                                        @if (!string.IsNullOrEmpty(exhibition.ImageUrl))
+                                        {
+                                            <div class="col-md-4">
+                                                <img src="@exhibition.ImageUrl" class="img-fluid rounded-start h-100 object-cover" alt="@exhibition.Title">
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <ExhibitionCardContent Exhibition="exhibition" />
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="col-12">
+                                                <div class="card-body">
+                                                    <ExhibitionCardContent Exhibition="exhibition" />
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        @(selectedStatus.HasValue ? $"{GetStatusText(selectedStatus.Value)} kategorisinde" : "") sergi bulunmuyor.
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Exhibition>? allExhibitions;
+    private List<Exhibition>? filteredExhibitions;
+    private ExhibitionStatus? selectedStatus;
+
+    protected override async Task OnInitializedAsync()
+    {
+        allExhibitions = await DbContext.Exhibitions
+            .Where(e => e.IsActive && !e.IsInternational)
+            .OrderByDescending(e => e.StartDate)
+            .ToListAsync();
+
+        FilterByStatus(null);
+    }
+
+    private void FilterByStatus(ExhibitionStatus? status)
+    {
+        selectedStatus = status;
+        
+        if (allExhibitions == null) return;
+
+        filteredExhibitions = status.HasValue 
+            ? allExhibitions.Where(e => e.Status == status.Value).ToList()
+            : allExhibitions.ToList();
+    }
+
+    private string GetStatusColor(ExhibitionStatus status) => status switch
+    {
+        ExhibitionStatus.Upcoming => "warning",
+        ExhibitionStatus.Active => "success",
+        ExhibitionStatus.Past => "secondary",
+        _ => "primary"
+    };
+
+    private string GetStatusIcon(ExhibitionStatus status) => status switch
+    {
+        ExhibitionStatus.Upcoming => "fas fa-clock",
+        ExhibitionStatus.Active => "fas fa-play",
+        ExhibitionStatus.Past => "fas fa-check",
+        _ => "fas fa-calendar"
+    };
+
+    private string GetStatusText(ExhibitionStatus status) => status switch
+    {
+        ExhibitionStatus.Upcoming => "Yaklaşan",
+        ExhibitionStatus.Active => "Aktif",
+        ExhibitionStatus.Past => "Geçmiş",
+        _ => "Bilinmeyen"
+    };
+}
+
+@* Exhibition Card Content Component *@
+@code {
+    private RenderFragment<Exhibition> ExhibitionCardContent => exhibition => __builder =>
+    {
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <h5 class="card-title mb-0">@exhibition.Title</h5>
+            <span class="badge bg-@GetStatusColor(exhibition.Status)">
+                @GetStatusText(exhibition.Status)
+            </span>
+        </div>
+        
+        if (!string.IsNullOrEmpty(exhibition.Description))
+        {
+            <p class="card-text">@exhibition.Description</p>
+        }
+        
+        <div class="exhibition-details">
+            <p class="card-text mb-1">
+                <small class="text-muted">
+                    <i class="fas fa-calendar me-1"></i>
+                    @exhibition.StartDate.ToString("dd MMMM yyyy")
+                    @if (exhibition.EndDate.HasValue)
+                    {
+                        <span> - @exhibition.EndDate.Value.ToString("dd MMMM yyyy")</span>
+                    }
+                </small>
+            </p>
+            
+            @if (!string.IsNullOrEmpty(exhibition.Location))
+            {
+                <p class="card-text mb-1">
+                    <small class="text-muted">
+                        <i class="fas fa-map-marker-alt me-1"></i>@exhibition.Location
+                    </small>
+                </p>
+            }
+            
+            <p class="card-text">
+                <small class="text-muted">
+                    <i class="fas fa-tag me-1"></i>@GetExhibitionTypeText(exhibition.Type)
+                </small>
+            </p>
+        </div>
+    };
+
+    private string GetExhibitionTypeText(ExhibitionType type) => type switch
+    {
+        ExhibitionType.Solo => "Kişisel Sergi",
+        ExhibitionType.Group => "Karma Sergi",
+        ExhibitionType.Participation => "Katılım",
+        _ => "Diğer"
+    };
+}

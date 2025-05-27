@@ -1,0 +1,157 @@
+@page "/haberler"
+@using ArtistPortfolio.Data
+@using ArtistPortfolio.Shared.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+
+<PageTitle>Basından Haberler - Sanatçı Portföyü</PageTitle>
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 text-center mb-5">
+            <h1 class="display-4 fw-bold">Basından Haberler</h1>
+            <p class="lead text-muted">Medyada yer alan haberler, röportajlar ve programlar</p>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-pills justify-content-center">
+                <li class="nav-item">
+                    <button class="nav-link @(selectedType == null ? "active" : "")" 
+                            @onclick="() => FilterByType(null)">
+                        Tümü
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(selectedType == NewsType.Program ? "active" : "")" 
+                            @onclick="() => FilterByType(NewsType.Program)">
+                        <i class="fas fa-tv me-1"></i>Programlar
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(selectedType == NewsType.Interview ? "active" : "")" 
+                            @onclick="() => FilterByType(NewsType.Interview)">
+                        <i class="fas fa-microphone me-1"></i>Röportajlar
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(selectedType == NewsType.Magazine ? "active" : "")" 
+                            @onclick="() => FilterByType(NewsType.Magazine)">
+                        <i class="fas fa-book me-1"></i>Dergiler
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(selectedType == NewsType.Newspaper ? "active" : "")" 
+                            @onclick="() => FilterByType(NewsType.Newspaper)">
+                        <i class="fas fa-newspaper me-1"></i>Gazeteler
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- News Grid -->
+    <div class="row">
+        @if (filteredNews != null && filteredNews.Any())
+        {
+            @foreach (var news in filteredNews)
+            {
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="card news-card h-100">
+                        @if (!string.IsNullOrEmpty(news.ImageUrl))
+                        {
+                            <img src="@news.ImageUrl" class="card-img-top" alt="@news.Title">
+                        }
+                        <div class="card-body d-flex flex-column">
+                            <div class="mb-2">
+                                <span class="badge bg-@GetTypeColor(news.Type)">
+                                    <i class="@GetTypeIcon(news.Type) me-1"></i>@GetTypeText(news.Type)
+                                </span>
+                            </div>
+                            <h5 class="card-title">@news.Title</h5>
+                            <p class="card-text flex-grow-1">@news.Content</p>
+                            <div class="mt-auto">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>@news.PublishedDate.ToString("dd MMMM yyyy")
+                                </small>
+                                @if (!string.IsNullOrEmpty(news.VideoUrl))
+                                {
+                                    <div class="mt-2">
+                                        <a href="@news.VideoUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-play me-1"></i>Videoyu İzle
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    @(selectedType.HasValue ? $"{GetTypeText(selectedType.Value)} kategorisinde" : "") haber bulunmuyor.
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<NewsItem>? allNews;
+    private List<NewsItem>? filteredNews;
+    private NewsType? selectedType;
+
+    protected override async Task OnInitializedAsync()
+    {
+        allNews = await DbContext.NewsItems
+            .Where(n => n.IsActive)
+            .OrderByDescending(n => n.PublishedDate)
+            .ToListAsync();
+
+        FilterByType(null);
+    }
+
+    private void FilterByType(NewsType? type)
+    {
+        selectedType = type;
+        
+        if (allNews == null) return;
+
+        filteredNews = type.HasValue 
+            ? allNews.Where(n => n.Type == type.Value).ToList()
+            : allNews.ToList();
+    }
+
+    private string GetTypeColor(NewsType type) => type switch
+    {
+        NewsType.Program => "primary",
+        NewsType.Interview => "success",
+        NewsType.Magazine => "warning",
+        NewsType.Newspaper => "info",
+        _ => "secondary"
+    };
+
+    private string GetTypeIcon(NewsType type) => type switch
+    {
+        NewsType.Program => "fas fa-tv",
+        NewsType.Interview => "fas fa-microphone",
+        NewsType.Magazine => "fas fa-book",
+        NewsType.Newspaper => "fas fa-newspaper",
+        _ => "fas fa-file"
+    };
+
+    private string GetTypeText(NewsType type) => type switch
+    {
+        NewsType.Program => "Program",
+        NewsType.Interview => "Röportaj",
+        NewsType.Magazine => "Dergi",
+        NewsType.Newspaper => "Gazete",
+        _ => "Diğer"
+    };
+}

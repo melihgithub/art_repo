@@ -1,0 +1,77 @@
+@page "/login"
+@* @layout LoginLayout *@
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using System.ComponentModel.DataAnnotations
+@using ArtistPortfolio.Admin.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    Giriş
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @errorMessage
+                        </div>
+                    }
+                    <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin">
+                        <DataAnnotationsValidator />
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Kullanıcı Adı</label>
+                            <InputText id="username" class="form-control" @bind-Value="loginModel.Username" placeholder="Kullanıcı adınızı girin" />
+                            <ValidationMessage For="@(() => loginModel.Username)" class="text-danger" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Şifre</label>
+                            <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password" placeholder="Şifrenizi girin" />
+                            <ValidationMessage For="@(() => loginModel.Password)" class="text-danger" />
+                        </div>
+                        <div class="mb-3 form-check">
+                            <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="loginModel.RememberMe" />
+                            <label class="form-check-label" for="rememberMe">Beni Hatırla</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Giriş Yap</button>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel loginModel = new LoginModel();
+    private string errorMessage;
+
+    private async Task HandleLogin()
+    {
+        var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthenticationStateProvider;
+        var result = await customAuthStateProvider.ValidateUser(loginModel.Username, loginModel.Password);
+
+        if (result)
+        {
+            NavigationManager.NavigateTo("/admin", forceLoad: true);
+        }
+        else
+        {
+            errorMessage = "Kullanıcı adı veya şifre hatalı.";
+        }
+    }
+
+    public class LoginModel
+    {
+        [Required(ErrorMessage = "Kullanıcı adı gereklidir.")]
+        public string Username { get; set; }
+
+        [Required(ErrorMessage = "Şifre gereklidir.")]
+        public string Password { get; set; }
+
+        public bool RememberMe { get; set; }
+    }
+}

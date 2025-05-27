@@ -1,0 +1,84 @@
+@inject NavigationManager Navigation
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h4><i class="fas fa-palette me-2"></i>Admin Panel</h4>
+    </div>
+    
+    <nav class="sidebar-nav">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <NavLink class="nav-link" href="/dashboard" Match="NavLinkMatch.All">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </NavLink>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#contentMenu" role="button">
+                    <i class="fas fa-file-alt me-2"></i>İçerik Yönetimi
+                    <i class="fas fa-chevron-down ms-auto"></i>
+                </a>
+                <div class="collapse" id="contentMenu">
+                    <ul class="nav flex-column ms-3">
+                        <li class="nav-item">
+                            <NavLink class="nav-link" href="/admin/about">
+                                <i class="fas fa-user me-2"></i>Hakkımda
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link" href="/admin/news">
+                                <i class="fas fa-newspaper me-2"></i>Haberler
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link" href="/admin/artworks">
+                                <i class="fas fa-images me-2"></i>Eserler
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link" href="/admin/exhibitions">
+                                <i class="fas fa-calendar me-2"></i>Sergiler
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link" href="/admin/workshops">
+                                <i class="fas fa-tools me-2"></i>Atölye
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link" href="/admin/faq">
+                                <i class="fas fa-question-circle me-2"></i>S.S.S
+                            </NavLink>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            
+            <li class="nav-item">
+                <NavLink class="nav-link" href="/admin/messages">
+                    <i class="fas fa-envelope me-2"></i>Mesajlar
+                    @if (unreadCount > 0)
+                    {
+                        <span class="badge bg-danger ms-auto">@unreadCount</span>
+                    }
+                </NavLink>
+            </li>
+            
+            <li class="nav-item">
+                <NavLink class="nav-link" href="/admin/users">
+                    <i class="fas fa-users me-2"></i>Kullanıcılar
+                </NavLink>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+@code {
+    private int unreadCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // TODO: Get unread message count from service
+        unreadCount = 0;
+    }
+}

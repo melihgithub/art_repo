@@ -1,0 +1,37 @@
+@using ArtistPortfolio.Web.Shared
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found>
+        <RouteView RouteData="@context" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@context" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Sayfa Bulunamadı</PageTitle>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <div class="container py-5">
+                <div class="row justify-content-center">
+                    <div class="col-md-8 text-center">
+                        <i class="fas fa-exclamation-triangle fa-5x text-warning mb-4"></i>
+                        <h1 class="display-4">404</h1>
+                        <p class="fs-3">
+                            <span class="text-danger">Oops!</span> Sayfa bulunamadı.
+                        </p>
+                        <p class="lead">
+                            Aradığınız sayfa mevcut değil veya taşınmış olabilir.
+                        </p>
+                        <div class="mt-4">
+                            <a href="/" class="btn btn-primary me-2">
+                                <i class="fas fa-home me-1"></i>Ana Sayfa
+                            </a>
+                            <a href="/iletisim" class="btn btn-outline-primary">
+                                <i class="fas fa-envelope me-1"></i>İletişim
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>

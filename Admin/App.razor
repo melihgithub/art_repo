@@ -1,0 +1,18 @@
+@using ArtistPortfolio.Admin.Shared
+@using Microsoft.AspNetCore.Components.Routing
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+            <NotAuthorized>
+                <RedirectToLogin />
+            </NotAuthorized>
+        </AuthorizeRouteView>
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Sayfa Bulunamadı</PageTitle>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <p role="alert">Üzgünüz, bu adres için bir sayfa bulunamadı.</p>
+        </LayoutView>
+    </NotFound>
+</Router>

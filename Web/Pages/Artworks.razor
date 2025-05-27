@@ -1,0 +1,217 @@
+@page "/eserler"
+@using ArtistPortfolio.Data
+@using ArtistPortfolio.Shared.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+
+<PageTitle>Eserler - Sanatçı Portföyü</PageTitle>
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 text-center mb-5">
+            <h1 class="display-4 fw-bold">Eserlerim</h1>
+            <p class="lead text-muted">Sanat yolculuğumun ürünleri</p>
+        </div>
+    </div>
+
+    <!-- Filter Options -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" class="form-control" placeholder="Eser ara..." @bind="searchTerm" @oninput="FilterArtworks">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="selectedTechnique" @onchange="FilterArtworks">
+                <option value="">Tüm Teknikler</option>
+                @foreach (var technique in techniques)
+                {
+                    <option value="@technique">@technique</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="sortBy" @onchange="FilterArtworks">
+                <option value="newest">En Yeni</option>
+                <option value="oldest">En Eski</option>
+                <option value="title">Başlık (A-Z)</option>
+                <option value="year">Yıl</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Artworks Grid -->
+    <div class="row">
+        @if (filteredArtworks != null && filteredArtworks.Any())
+        {
+            @foreach (var artwork in filteredArtworks)
+            {
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card artwork-card h-100" @onclick="() => OpenArtworkModal(artwork)">
+                        <div class="artwork-image-container">
+                            <img src="@artwork.ImageUrl" class="card-img-top" alt="@artwork.Title">
+                            <div class="artwork-overlay">
+                                <i class="fas fa-search-plus"></i>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">@artwork.Title</h5>
+                            @if (!string.IsNullOrEmpty(artwork.Description))
+                            {
+                                <p class="card-text text-muted">@artwork.Description</p>
+                            }
+                            <div class="artwork-details">
+                                @if (!string.IsNullOrEmpty(artwork.Technique))
+                                {
+                                    <small class="text-muted d-block">
+                                        <i class="fas fa-brush me-1"></i>@artwork.Technique
+                                    </small>
+                                }
+                                @if (artwork.Year.HasValue)
+                                {
+                                    <small class="text-muted d-block">
+                                        <i class="fas fa-calendar me-1"></i>@artwork.Year
+                                    </small>
+                                }
+                                @if (!string.IsNullOrEmpty(artwork.Dimensions))
+                                {
+                                    <small class="text-muted d-block">
+                                        <i class="fas fa-ruler me-1"></i>@artwork.Dimensions
+                                    </small>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Henüz eser bulunmuyor.
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Artwork Modal -->
+@if (selectedArtwork != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.8);">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@selectedArtwork.Title</h5>
+                    <button type="button" class="btn-close" @onclick="CloseArtworkModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <img src="@selectedArtwork.ImageUrl" class="img-fluid rounded" alt="@selectedArtwork.Title">
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Eser Detayları</h6>
+                            @if (!string.IsNullOrEmpty(selectedArtwork.Description))
+                            {
+                                <p>@selectedArtwork.Description</p>
+                            }
+                            @if (!string.IsNullOrEmpty(selectedArtwork.Technique))
+                            {
+                                <p><strong>Teknik:</strong> @selectedArtwork.Technique</p>
+                            }
+                            @if (!string.IsNullOrEmpty(selectedArtwork.Dimensions))
+                            {
+                                <p><strong>Boyutlar:</strong> @selectedArtwork.Dimensions</p>
+                            }
+                            @if (selectedArtwork.Year.HasValue)
+                            {
+                                <p><strong>Yıl:</strong> @selectedArtwork.Year</p>
+                            }
+                            @if (selectedArtwork.IsForSale && selectedArtwork.Price.HasValue)
+                            {
+                                <div class="alert alert-success">
+                                    <strong>Satışta:</strong> @selectedArtwork.Price.Value.ToString("C")
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Artwork>? allArtworks;
+    private List<Artwork>? filteredArtworks;
+    private List<string> techniques = new();
+    private Artwork? selectedArtwork;
+    
+    private string searchTerm = "";
+    private string selectedTechnique = "";
+    private string sortBy = "newest";
+
+    protected override async Task OnInitializedAsync()
+    {
+        allArtworks = await DbContext.Artworks
+            .Where(a => a.IsActive)
+            .OrderBy(a => a.DisplayOrder)
+            .ToListAsync();
+
+        techniques = allArtworks
+            .Where(a => !string.IsNullOrEmpty(a.Technique))
+            .Select(a => a.Technique!)
+            .Distinct()
+            .OrderBy(t => t)
+            .ToList();
+
+        FilterArtworks();
+    }
+
+    private void FilterArtworks()
+    {
+        if (allArtworks == null) return;
+
+        var filtered = allArtworks.AsEnumerable();
+
+        // Search filter
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            filtered = filtered.Where(a => 
+                a.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (a.Description?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        // Technique filter
+        if (!string.IsNullOrEmpty(selectedTechnique))
+        {
+            filtered = filtered.Where(a => a.Technique == selectedTechnique);
+        }
+
+        // Sort
+        filtered = sortBy switch
+        {
+            "oldest" => filtered.OrderBy(a => a.CreatedAt),
+            "title" => filtered.OrderBy(a => a.Title),
+            "year" => filtered.OrderByDescending(a => a.Year ?? 0),
+            _ => filtered.OrderByDescending(a => a.CreatedAt)
+        };
+
+        filteredArtworks = filtered.ToList();
+        StateHasChanged();
+    }
+
+    private void OpenArtworkModal(Artwork artwork)
+    {
+        selectedArtwork = artwork;
+    }
+
+    private void CloseArtworkModal()
+    {
+        selectedArtwork = null;
+    }
+}
